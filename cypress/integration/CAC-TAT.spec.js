@@ -1,6 +1,8 @@
 /// <reference types="Cypress" />
 
 describe('Central de Atendimento ao Cliente TAT', function() {
+    const THREE_SECONDS_IN_MS = 3000
+
     beforeEach(function(){
         cy.visit('./src/index.html')
     })
@@ -9,6 +11,9 @@ describe('Central de Atendimento ao Cliente TAT', function() {
           .should('be.equal', 'Central de Atendimento ao Cliente TAT')        
     })
     it('preenche os campos obrigatórios e envia o formulário', function(){
+        
+        cy.clock()
+
         cy.get('#firstName').type('Jairo')
         cy.get('#lastName').type('Almeida')
         cy.get('#email').type('jairoam85@gmail.com')
@@ -16,15 +21,25 @@ describe('Central de Atendimento ao Cliente TAT', function() {
         cy.get('button[type="submit"]').click()
 
         cy.get('.success').should('be.visible')
+
+        cy.tick(THREE_SECONDS_IN_MS)
+
+        cy.get('.success').should('not.be.visible')
     })
 
     it('Sem informar campo nome', function(){
+
+        cy.clock()
         cy.get('#lastName').type('Almeida')
         cy.get('#email').type('jairoam85@gmail.com')
         cy.get('#open-text-area').type('Curso básico de cypress')
         cy.get('button[type="submit"]').click()
     
         cy.get('.error').should('be.visible')
+
+        cy.tick(THREE_SECONDS_IN_MS)
+
+        cy.get('.success').should('not.be.visible')
     })
 
     it('Usando elemento "contains"', function(){
@@ -210,5 +225,94 @@ describe('Central de Atendimento ao Cliente TAT', function() {
         cy.contains('Talking About Testing').should('be.visible')
     })
 
-    /**  Simulando viewport de um dispositivo móvel */
+    /**  Uso do cy.clock congelar o relógio do navegador e cy.tick para avançar no tempo para mensagens que tem tempo para desaparecer */
+
+    it('preenche os campos obrigatórios e envia o formulário', function(){
+        
+        cy.clock()
+
+        cy.get('#firstName').type('Jairo')
+        cy.get('#lastName').type('Almeida')
+        cy.get('#email').type('jairoam85@gmail.com')
+        cy.get('#open-text-area').type('Curso básico de cypress')
+        cy.get('button[type="submit"]').click()
+
+        cy.get('.success').should('be.visible')
+
+        cy.tick(THREE_SECONDS_IN_MS)
+
+        cy.get('.success').should('not.be.visible')
+    })
+
+    /** Uso do Lodash para executar o teste várias vezes*/
+
+    Cypress._.times(3, function(){
+        it('preenche os campos obrigatórios e envia o formulário', function(){
+        
+            cy.clock()
+    
+            cy.get('#firstName').type('Jairo')
+            cy.get('#lastName').type('Almeida')
+            cy.get('#email').type('jairoam85@gmail.com')
+            cy.get('#open-text-area').type('Curso básico de cypress')
+            cy.get('button[type="submit"]').click()
+    
+            cy.get('.success').should('be.visible')
+    
+            cy.tick(THREE_SECONDS_IN_MS)
+    
+            cy.get('.success').should('not.be.visible')
+        })
+    })   
+
+    /** Usando o comando Invoque .invoke() */
+
+    it('exibe e esconde as mensagens de sucesso e erro usando o .invoke', function(){
+        cy.get('.success')
+          .should('not.be.visible')
+          .invoke('show')
+          .should('be.visible')
+          .and('contain', 'Mensagem enviada com sucesso.')
+          .invoke('hide')
+          .should('not.be.visible')
+        cy.get('.error')
+          .should('not.be.visible')
+          .invoke('show')
+          .should('be.visible')
+          .and('contain', 'Valide os campos obrigatórios!')
+          .invoke('hide')
+          .should('not.be.visible')
+    })    
+
+    it('preenche a area de texto usando o comando invoke  CTRL V', function(){
+        const longText02 = Cypress._.repeat('0123456789', 20)
+        cy.get('#open-text-area')
+          .invoke('val', longText02)
+          .should('have.value', longText02)
+    })
+
+    /** Usando cy.request() para executar comandos a nível de rede  STATUS GET, PUT, DELETE e POST para testes de API*/
+
+    it('faz uma requisição HTTP', function (){
+        cy.request('https://cac-tat.s3.eu-central-1.amazonaws.com/index.html')
+          .should(function(response) {
+              const { status, statusText, body } = response
+              expect(status).to.equal(200)
+              expect(statusText).to.equal('OK')
+              expect(body).to.include('CAC TAT')
+          })
+    })
+
+
+    /** Desafio para encontrar no Gato no meio do HTML */
+
+    it('encontra o gato escondido na aplicação', function() {
+        cy.get('#cat')
+          .invoke('show')
+          .should('be.visible')
+        cy.get('#title')
+          .invoke('text', 'CAT TAT')
+        cy.get('#subtitle')
+          .invoke('text', 'Eu amo gatos!')
+    })
 })
